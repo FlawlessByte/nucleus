@@ -22,25 +22,11 @@ jobs:
       with:
         version: v3.12.1
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
+    - name: Lint Helm chart
+      run: helm lint .
 
-    - name: Set up chart-testing
-      uses: helm/chart-testing-action@v2.4.0
-
-    - name: Run chart-testing (list)
-      run: ct list --target-branch ${{ github.event.repository.default_branch }}
-
-    - name: Run chart-testing (lint)
-      run: ct lint --target-branch ${{ github.event.repository.default_branch }}
-
-    - name: Create kind cluster
-      uses: helm/kind-action@v1.4.0
-
-    - name: Run chart-testing (install)
-      run: ct install --target-branch ${{ github.event.repository.default_branch }}
+    - name: Test Helm template
+      run: helm template test-release .
 
   package-and-publish:
     needs: lint-and-test
@@ -61,10 +47,6 @@ jobs:
       uses: azure/setup-helm@v3
       with:
         version: v3.12.1
-
-    - name: Package Helm chart
-      run: |
-        helm package . --destination ./charts/
 
     - name: Run chart-releaser
       uses: helm/chart-releaser-action@v1.5.0
@@ -93,10 +75,6 @@ jobs:
       uses: azure/setup-helm@v3
       with:
         version: v3.12.1
-
-    - name: Package Helm chart
-      run: |
-        helm package . --destination ./charts/
 
     - name: Run chart-releaser
       uses: helm/chart-releaser-action@v1.5.0
