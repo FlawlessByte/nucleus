@@ -79,7 +79,7 @@ Reference implementation: `src/services/device-consumer/ops/helm/device-consumer
 ```yaml
 global:
   image:
-    repository: myregistry.com/app
+    repository: registry.flawlessbyte.dev/app
     tag: v1.0.0
   env:
     ENVIRONMENT: production

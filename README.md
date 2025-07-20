@@ -199,7 +199,7 @@ externalSecrets:
   enabled: true
   name: my-app-secrets  # Optional: custom secret name
   annotations:          # Optional: custom annotations
-    my.company.io/secret-type: application
+    flawlessbyte.dev/secret-type: application
   secretStoreRef:
     name: aws-secrets-manager-store
     kind: ClusterSecretStore
@@ -292,7 +292,7 @@ Use global values for shared configuration across environments:
 ```yaml
 global:
   image:
-    repository: myregistry.com/myapp
+    repository: registry.flawlessbyte.dev/myapp
     pullPolicy: IfNotPresent
   additionalLabels:
     team: platform
@@ -507,5 +507,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For support and questions:
 - Create an issue in the GitHub repository
-- Contact the maintainer at maintainer@yourcompany.com
+- Contact the maintainer via GitHub Issues
 - Check the documentation in the repository

@@ -15,7 +15,7 @@ version: 0.1.0
 dependencies:
   - name: nucleus
     version: "^1.0.0"
-    repository: "https://your-personal-helm-repo.com"
+    repository: "https://flawlessbyte.github.io/nucleus"
     alias: app
     condition: app.enabled
 ```
@@ -212,7 +212,7 @@ global:
       scope: global
       environment: production
     annotations:
-      shared.myapp.io/config: "true"
+      shared.flawlessbyte.dev/config: "true"
   
   - name: feature-flags
     data:
@@ -239,7 +239,7 @@ global:
       scope: global
       environment: production
     annotations:
-      shared.myapp.io/secret: "true"
+      shared.flawlessbyte.dev/secret: "true"
   
   - name: shared-api-keys
     secretStoreRef:

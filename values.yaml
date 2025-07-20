@@ -377,4 +377,4 @@ additionalConfigMaps: []
   #   labels:
   #     hello: world
   #   annotations:
-  #     example.com/annotation: "value"
+  #     flawlessbyte.dev/annotation: "value"
