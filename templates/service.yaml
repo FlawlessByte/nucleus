@@ -1,0 +1,24 @@
+{{- if .Values.service.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nucleus.serviceName" . }}
+  labels:
+    {{- include "nucleus.labels" . | nindent 4 }}
+  {{- $annotations := mergeOverwrite (fromYaml (include "nucleus.annotations" .)) .Values.service.annotations }}
+  {{- if $annotations }}
+  annotations:
+    {{- toYaml $annotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
+  type: {{ .Values.service.type }}
+  {{- with .Values.service.ports }}
+  ports:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    {{- include "nucleus.selectorLabels" . | nindent 4 }}
+{{- end }}
