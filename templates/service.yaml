@@ -8,7 +8,7 @@ metadata:
   {{- $annotations := mergeOverwrite (fromYaml (include "nucleus.annotations" .)) .Values.service.annotations }}
   {{- if $annotations }}
   annotations:
-    {{- toYaml $annotations | nindent 4 }}
+    {{- include "nucleus.formatAnnotations" $annotations | nindent 4 }}
   {{- end }}
 spec:
   {{- with .Values.service.externalTrafficPolicy }}

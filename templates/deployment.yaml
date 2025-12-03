@@ -7,7 +7,7 @@ metadata:
     {{- include "nucleus.labels" . | nindent 4 }}
   {{- with mergeOverwrite (fromYaml (include "nucleus.annotations" .)) .Values.workload.annotations }}
   annotations:
-    {{- toYaml . | nindent 4 }}
+    {{- include "nucleus.formatAnnotations" . | nindent 4 }}
   {{- end }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
@@ -27,7 +27,7 @@ spec:
     metadata:
       {{- with (mergeOverwrite (deepCopy .Values.global.podAnnotations) .Values.podAnnotations) }}
       annotations:
-        {{- toYaml . | nindent 8 }}
+        {{- include "nucleus.formatAnnotations" . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "nucleus.selectorLabels" . | nindent 8 }}
@@ -89,7 +89,7 @@ spec:
         {{- tpl (toYaml .) $ | nindent 6 }}
       {{- end }}
       containers:
-      - name: {{ .Chart.Name }}
+      - name: {{ .Values.containerName | default .Release.Name }}
         {{- with .Values.args }}
         args:
           {{- toYaml . | nindent 10 }}

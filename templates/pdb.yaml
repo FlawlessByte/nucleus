@@ -5,9 +5,9 @@ metadata:
   labels:
     {{- include "nucleus.labels" . | nindent 4 }}
   name: {{ include "nucleus.fullname" . }}
-  {{- with (include "nucleus.annotations" .) }}
+  {{- with fromYaml (include "nucleus.annotations" .) }}
   annotations:
-    {{- toYaml . | nindent 4 }}
+    {{- include "nucleus.formatAnnotations" . | nindent 4 }}
   {{- end }}
 spec:
   selector:

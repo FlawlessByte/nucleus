@@ -40,7 +40,7 @@ helm.sh/chart: {{ include "nucleus.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- with .Values.global.additionalLabels }}
+{{- with (mergeOverwrite (deepCopy .Values.global.additionalLabels) .Values.commonLabels) }}
 {{ toYaml . }}
 {{- end }}
 {{- end }}
@@ -79,6 +79,22 @@ Common annotations
 app.kubernetes.io/chart: nucleus
 {{- with (mergeOverwrite (deepCopy .Values.global.additionalAnnotations) .Values.commonAnnotations) }}
 {{ toYaml . }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Format annotations with support for multi-line values
+Preserves multi-line strings using YAML literal block scalar syntax (|)
+*/}}
+{{- define "nucleus.formatAnnotations" -}}
+{{- range $key, $value := . }}
+{{- $strValue := toString $value }}
+{{- if contains "\n" $strValue }}
+{{ $key }}: |
+{{ $strValue | indent 2 }}
+{{- else }}
+{{ $key }}: {{ $value | quote }}
+{{- end }}
 {{- end }}
 {{- end -}}
 

@@ -178,6 +178,12 @@ serviceAccount:
 # -- Annotations to add to pods
 podAnnotations: {}
 
+# -- Common labels applied to all resources
+commonLabels: {}
+  # Example configuration:
+  # environment: production
+  # team: platform
+
 # -- Common annotations applied to all resources
 commonAnnotations: {}
   # Example configuration:
@@ -238,6 +244,9 @@ serviceMonitor:
   #   scheme: https
   #   targetPort: https
   #   path: /api/metrics
+
+# -- Name of the main container (defaults to release name)
+containerName: ""
 
 # -- Container ports configuration
 containerPorts: []

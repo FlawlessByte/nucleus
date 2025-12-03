@@ -5,16 +5,11 @@ metadata:
   name: {{ include "nucleus.fullname" . }}
   labels:
     {{- include "nucleus.labels" . | nindent 4 }}
-  {{- with (include "nucleus.annotations" .) }}
+  {{- $baseAnnotations := fromYaml (include "nucleus.annotations" .) }}
+  {{- $annotations := mergeOverwrite $baseAnnotations .Values.serviceMonitor.annotations }}
+  {{- if $annotations }}
   annotations:
-    {{- . | nindent 4 }}
-  {{- end }}
-  {{- if or .Values.serviceMonitor.annotations (include "nucleus.annotations" .) }}
-  annotations:
-    {{- include "nucleus.annotations" . | nindent 4 }}
-    {{- with .Values.serviceMonitor.annotations }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
+    {{- include "nucleus.formatAnnotations" $annotations | nindent 4 }}
   {{- end }}
 spec:
   endpoints:
