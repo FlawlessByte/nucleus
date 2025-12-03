@@ -62,17 +62,17 @@ app:
 dependencies:
   - name: nucleus
     version: "^1.0.0"
-    repository: "https://your-personal-helm-repo.com"
+    repository: "https://flawlessbyte.github.io/nucleus"
     alias: frontend
     condition: frontend.enabled
   - name: nucleus
     version: "^1.0.0"
-    repository: "https://your-personal-helm-repo.com"
+    repository: "https://flawlessbyte.github.io/nucleus"
     alias: api
     condition: api.enabled
   - name: nucleus
     version: "^1.0.0"
-    repository: "https://your-personal-helm-repo.com"
+    repository: "https://flawlessbyte.github.io/nucleus"
     alias: redis
     condition: redis.enabled
 ```
@@ -151,12 +151,14 @@ redis:
 ### values-dev.yaml
 ```yaml
 frontend:
-  replicaCount: 1
+  workload:
+    replicaCount: 1
   autoscaling:
     enabled: false
 
 api:
-  replicaCount: 1
+  workload:
+    replicaCount: 1
   externalSecrets:
     enabled: false
 

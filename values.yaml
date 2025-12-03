@@ -48,9 +48,6 @@ global:
   # -- Global environment variables for all containers (key-value map)
   env: {}
 
-# -- Number of replicas for the workload (ignored if autoscaling is enabled)
-replicaCount: 1
-
 # Image configuration for the main container
 image:
   # -- Image pull policy (overrides global.image.pullPolicy if set)
@@ -96,16 +93,16 @@ autoscaling:
   keda:
     # -- Base/fundamental scaling triggers (CPU, memory, basic metrics)
     baseTriggers: []
-    
+
     # -- Additional/advanced scaling triggers (CloudWatch, custom metrics, etc.)
     additionalTriggers: []
-    
+
     # -- KEDA polling interval in seconds
     pollingInterval: 30
-    
+
     # -- KEDA cooldown period in seconds
     cooldownPeriod: 180
-    
+
     # -- Advanced KEDA configuration options
     advanced: {}
 
@@ -156,7 +153,7 @@ workload:
   # -- Annotations to add to the workload resource
   annotations: {}
 
-  # -- Number of replicas (overrides root replicaCount if set)
+  # -- Number of replicas for the workload (ignored if autoscaling is enabled)
   replicaCount: 1
 
   # Deployment-specific configuration
@@ -372,9 +369,29 @@ initContainers: []
 additionalConfigMaps: []
   # Example ConfigMap:
   # - name: custom-config
-  #   data: 
+  #   data:
   #     custom-key: custom-value
   #   labels:
   #     hello: world
   #   annotations:
   #     flawlessbyte.dev/annotation: "value"
+
+ingress:
+  # -- Enable Ingress resource creation
+  enabled: false
+  # -- Ingress class name (if applicable)
+  className: ""
+  # -- Annotations to add to the Ingress resource
+  annotations: {}
+  # -- Hosts configuration for the Ingress
+  hosts: []
+    # Example host configuration:
+    # - host: example.com
+    #   paths:
+    #     - path: /
+    #       pathType: Prefix
+  tls: []
+    # Example TLS configuration:
+    # - hosts:
+    #   - example.com
+    #   secretName: example-tls

@@ -323,7 +323,7 @@ global:
 |-----------|-------------|---------|
 | `workload.enabled` | Enable workload creation | `true` |
 | `workload.kind` | Workload type (Deployment/StatefulSet) | `"Deployment"` |
-| `replicaCount` | Number of replicas | `1` |
+| `workload.replicaCount` | Number of replicas | `1` |
 
 ### Service Configuration
 
