@@ -10,7 +10,7 @@ A flexible, reusable Helm chart designed to abstract common Kubernetes resource 
 - **Service Management**: Configurable service creation with multiple port support
 - **Security**: Comprehensive security context and RBAC configuration
 - **Observability**: Health check probes and pod disruption budgets
-- **Extensibility**: Support for init containers, sidecars, and additional resources
+- **Extensibility**: Support for init containers, sidecars, ConfigMaps, Secrets, CronJobs, and additional Kubernetes resources
 
 ## Breaking Changes
 
@@ -260,6 +260,169 @@ additionalConfigMaps:
         }
 ```
 
+### Secrets
+
+Create Kubernetes Secrets with automatic base64 encoding:
+
+```yaml
+additionalSecrets:
+  # Using stringData (auto base64-encoded)
+  - name: app-secrets
+    type: Opaque
+    stringData:
+      username: admin
+      password: secret-password
+      api-key: my-api-key-123
+    labels:
+      app: myapp
+    annotations:
+      description: "Application secrets"
+  
+  # Using pre-encoded data
+  - name: tls-secret
+    type: kubernetes.io/tls
+    data:
+      tls.crt: LS0tLS1CRUdJTi...  # base64 encoded
+      tls.key: LS0tLS1CRUdJTi...  # base64 encoded
+  
+  # Optional namespace
+  - name: cross-namespace-secret
+    namespace: other-namespace
+    type: Opaque
+    stringData:
+      shared-key: shared-value
+```
+
+### CronJobs
+
+Create scheduled jobs with full CronJob specification:
+
+```yaml
+additionalCronJobs:
+  - name: backup-job
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    concurrencyPolicy: Forbid
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 1
+    jobTemplate:
+      backoffLimit: 3
+      template:
+        restartPolicy: OnFailure
+        serviceAccountName: backup-sa  # Optional, defaults to chart's serviceAccount
+        containers:
+        - name: backup
+          image: backup-tool:latest
+          command: ["/bin/sh", "-c"]
+          args: ["backup.sh /data /backups"]
+          env:
+          - name: BACKUP_PATH
+            value: "/backups"
+          - name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: db-secret
+                key: url
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+          - name: backup-storage
+            mountPath: /backups
+        volumes:
+        - name: backup-storage
+          persistentVolumeClaim:
+            claimName: backup-pvc
+        nodeSelector:
+          workload-type: batch
+```
+
+### Additional Resources
+
+Create any Kubernetes resource using structured format or raw YAML:
+
+#### Structured Format (Recommended)
+
+```yaml
+additionalResources:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: data-pvc
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      storageClassName: fast-ssd
+      resources:
+        requests:
+          storage: 10Gi
+    labels:
+      app: myapp
+  
+  - apiVersion: v1
+    kind: Service
+    name: external-service
+    spec:
+      type: ExternalName
+      externalName: external.example.com
+      ports:
+      - port: 80
+        targetPort: 8080
+```
+
+#### Raw YAML Format (For Complex Resources)
+
+```yaml
+additionalResources:
+  # NetworkPolicy example
+  - |
+    apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: allow-app
+    spec:
+      podSelector:
+        matchLabels:
+          app: myapp
+      policyTypes:
+      - Ingress
+      - Egress
+      ingress:
+      - from:
+        - podSelector:
+            matchLabels:
+              app: frontend
+        ports:
+        - protocol: TCP
+          port: 8080
+  
+  # Role and RoleBinding example
+  - |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: Role
+    metadata:
+      name: pod-reader
+    rules:
+    - apiGroups: [""]
+      resources: ["pods"]
+      verbs: ["get", "watch", "list"]
+  
+  - |
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      name: read-pods
+    subjects:
+    - kind: ServiceAccount
+      name: my-service-account
+      namespace: default
+    roleRef:
+      kind: Role
+      name: pod-reader
+      apiGroup: rbac.authorization.k8s.io
+```
+
+**Note**: Raw YAML supports Helm template functions, so you can use `{{ .Release.Name }}`, `{{ .Values.* }}`, etc.
+
 ### Security Configuration
 
 ```yaml
@@ -306,6 +469,64 @@ global:
       effect: "NoSchedule"
 ```
 
+### Common Labels and Annotations
+
+Apply labels and annotations to all resources:
+
+```yaml
+# Common labels applied to all resources
+commonLabels:
+  environment: production
+  team: platform
+  region: us-east-1
+  cost-center: engineering
+
+# Common annotations applied to all resources
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "3"
+  description: "Production deployment"
+
+# Global labels (merged with commonLabels, commonLabels takes precedence)
+global:
+  additionalLabels:
+    global-label: value
+```
+
+### Container Name Configuration
+
+Customize the main container name:
+
+```yaml
+# Default: Uses release name
+# Example: release "my-app" → container name "my-app"
+
+# Custom container name
+containerName: "api-server"
+
+# Works independently of nameOverride and fullnameOverride
+nameOverride: "myapp"        # Affects resource names and labels
+fullnameOverride: "custom"    # Affects resource names only
+containerName: "web-server"   # Affects container name only
+```
+
+### Name Overrides
+
+Control resource naming:
+
+```yaml
+# Override the chart name (affects labels and resource names)
+nameOverride: "myapp"
+# Result: Resources named "release-myapp", labels use "myapp"
+
+# Override the full resource name
+fullnameOverride: "custom-name"
+# Result: All resources named "custom-name"
+
+# Container name (independent of overrides)
+containerName: "api-server"
+# Result: Container named "api-server" regardless of overrides
+```
+
 ## Configuration Reference
 
 ### Image Configuration
@@ -323,7 +544,12 @@ global:
 |-----------|-------------|---------|
 | `workload.enabled` | Enable workload creation | `true` |
 | `workload.kind` | Workload type (Deployment/StatefulSet) | `"Deployment"` |
-| `replicaCount` | Number of replicas | `1` |
+| `workload.replicaCount` | Number of replicas | `1` |
+| `containerName` | Name of the main container | `""` (defaults to release name) |
+| `nameOverride` | Override the chart name | `""` |
+| `fullnameOverride` | Override the full resource name | `""` |
+| `commonLabels` | Common labels applied to all resources | `{}` |
+| `commonAnnotations` | Common annotations applied to all resources | `{}` |
 
 ### Service Configuration
 
@@ -351,6 +577,43 @@ global:
 | `externalSecrets.annotations` | Custom annotations for external secret | `{}` |
 | `externalSecrets.secretStoreRef.name` | Secret store name | `"aws-secrets-manager-store"` |
 | `externalSecrets.secretStoreRef.kind` | Secret store kind | `"ClusterSecretStore"` |
+
+### Additional Resources Configuration
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `additionalConfigMaps` | Array of ConfigMaps to create | `[]` |
+| `additionalSecrets` | Array of Secrets to create | `[]` |
+| `additionalCronJobs` | Array of CronJobs to create | `[]` |
+| `additionalResources` | Array of generic Kubernetes resources (structured or raw YAML) | `[]` |
+| `containerName` | Name of the main container | `""` (defaults to release name) |
+| `commonLabels` | Common labels applied to all resources | `{}` |
+| `commonAnnotations` | Common annotations applied to all resources | `{}` |
+
+#### Additional Secrets Parameters
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `additionalSecrets[].name` | Secret name (required) | `""` |
+| `additionalSecrets[].type` | Secret type | `"Opaque"` |
+| `additionalSecrets[].namespace` | Optional namespace | `""` |
+| `additionalSecrets[].stringData` | Secret data (auto base64-encoded) | `{}` |
+| `additionalSecrets[].data` | Pre-encoded base64 secret data | `{}` |
+| `additionalSecrets[].labels` | Additional labels | `{}` |
+| `additionalSecrets[].annotations` | Additional annotations | `{}` |
+
+#### Additional CronJobs Parameters
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `additionalCronJobs[].name` | CronJob name (required) | `""` |
+| `additionalCronJobs[].schedule` | Cron schedule expression (required) | `""` |
+| `additionalCronJobs[].concurrencyPolicy` | Concurrency policy (Allow/Forbid/Replace) | `""` |
+| `additionalCronJobs[].suspend` | Suspend the CronJob | `false` |
+| `additionalCronJobs[].successfulJobsHistoryLimit` | Number of successful jobs to keep | `3` |
+| `additionalCronJobs[].failedJobsHistoryLimit` | Number of failed jobs to keep | `1` |
+| `additionalCronJobs[].jobTemplate.backoffLimit` | Number of retries before marking as failed | `6` |
+| `additionalCronJobs[].jobTemplate.template` | Pod template specification | `{}` |
 
 ## Examples
 

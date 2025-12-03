@@ -48,9 +48,6 @@ global:
   # -- Global environment variables for all containers (key-value map)
   env: {}
 
-# -- Number of replicas for the workload (ignored if autoscaling is enabled)
-replicaCount: 1
-
 # Image configuration for the main container
 image:
   # -- Image pull policy (overrides global.image.pullPolicy if set)
@@ -96,16 +93,16 @@ autoscaling:
   keda:
     # -- Base/fundamental scaling triggers (CPU, memory, basic metrics)
     baseTriggers: []
-    
+
     # -- Additional/advanced scaling triggers (CloudWatch, custom metrics, etc.)
     additionalTriggers: []
-    
+
     # -- KEDA polling interval in seconds
     pollingInterval: 30
-    
+
     # -- KEDA cooldown period in seconds
     cooldownPeriod: 180
-    
+
     # -- Advanced KEDA configuration options
     advanced: {}
 
@@ -156,7 +153,7 @@ workload:
   # -- Annotations to add to the workload resource
   annotations: {}
 
-  # -- Number of replicas (overrides root replicaCount if set)
+  # -- Number of replicas for the workload (ignored if autoscaling is enabled)
   replicaCount: 1
 
   # Deployment-specific configuration
@@ -180,6 +177,12 @@ serviceAccount:
 
 # -- Annotations to add to pods
 podAnnotations: {}
+
+# -- Common labels applied to all resources
+commonLabels: {}
+  # Example configuration:
+  # environment: production
+  # team: platform
 
 # -- Common annotations applied to all resources
 commonAnnotations: {}
@@ -241,6 +244,9 @@ serviceMonitor:
   #   scheme: https
   #   targetPort: https
   #   path: /api/metrics
+
+# -- Name of the main container (defaults to release name)
+containerName: ""
 
 # -- Container ports configuration
 containerPorts: []
@@ -372,9 +378,112 @@ initContainers: []
 additionalConfigMaps: []
   # Example ConfigMap:
   # - name: custom-config
-  #   data: 
+  #   data:
   #     custom-key: custom-value
   #   labels:
   #     hello: world
   #   annotations:
   #     flawlessbyte.dev/annotation: "value"
+
+# -- Additional Secrets to create
+additionalSecrets: []
+  # Example Secret with stringData (auto-encoded):
+  # - name: app-secrets
+  #   type: Opaque
+  #   stringData:
+  #     username: admin
+  #     password: secret-password
+  #   labels:
+  #     app: myapp
+  #   annotations:
+  #     description: "Application secrets"
+  # Example Secret with data (base64 encoded):
+  # - name: tls-secret
+  #   type: kubernetes.io/tls
+  #   data:
+  #     tls.crt: LS0tLS1CRUdJTi...
+  #     tls.key: LS0tLS1CRUdJTi...
+
+# -- Additional CronJobs to create
+additionalCronJobs: []
+  # Example CronJob:
+  # - name: backup-job
+  #   schedule: "0 2 * * *"  # Daily at 2 AM
+  #   concurrencyPolicy: Forbid
+  #   successfulJobsHistoryLimit: 3
+  #   failedJobsHistoryLimit: 1
+  #   jobTemplate:
+  #     backoffLimit: 3
+  #     template:
+  #       restartPolicy: OnFailure
+  #       serviceAccountName: backup-sa
+  #       containers:
+  #       - name: backup
+  #         image: backup-tool:latest
+  #         command: ["/bin/sh", "-c"]
+  #         args: ["backup.sh"]
+  #         resources:
+  #           requests:
+  #             cpu: 100m
+  #             memory: 128Mi
+  #         env:
+  #         - name: BACKUP_PATH
+  #           value: "/backups"
+  #       volumes:
+  #       - name: backup-storage
+  #         persistentVolumeClaim:
+  #           claimName: backup-pvc
+
+# -- Additional generic Kubernetes resources to create
+# Supports both structured format and raw YAML strings
+additionalResources: []
+  # Example 1: Structured format (recommended for simple resources)
+  # - apiVersion: v1
+  #   kind: PersistentVolumeClaim
+  #   name: data-pvc
+  #   spec:
+  #     accessModes:
+  #       - ReadWriteOnce
+  #     resources:
+  #       requests:
+  #         storage: 10Gi
+  #   labels:
+  #     app: myapp
+  # Example 2: Raw YAML string (for complex resources)
+  # - |
+  #   apiVersion: networking.k8s.io/v1
+  #   kind: NetworkPolicy
+  #   metadata:
+  #     name: allow-app
+  #   spec:
+  #     podSelector:
+  #       matchLabels:
+  #         app: myapp
+  #     policyTypes:
+  #     - Ingress
+  #     - Egress
+  #     ingress:
+  #     - from:
+  #       - podSelector:
+  #           matchLabels:
+  #             app: frontend
+
+ingress:
+  # -- Enable Ingress resource creation
+  enabled: false
+  # -- Ingress class name (if applicable)
+  className: ""
+  # -- Annotations to add to the Ingress resource
+  annotations: {}
+  # -- Hosts configuration for the Ingress
+  hosts: []
+    # Example host configuration:
+    # - host: example.com
+    #   paths:
+    #     - path: /
+    #       pathType: Prefix
+  tls: []
+    # Example TLS configuration:
+    # - hosts:
+    #   - example.com
+    #   secretName: example-tls

@@ -6,9 +6,9 @@ metadata:
   name: {{ include "nucleus.fullname" . }}
   labels:
     {{- include "nucleus.labels" . | nindent 4 }}
-  {{- with (include "nucleus.annotations" .) }}
+  {{- with fromYaml (include "nucleus.annotations" .) }}
   annotations:
-    {{- toYaml . | nindent 4 }}
+    {{- include "nucleus.formatAnnotations" . | nindent 4 }}
   {{- end }}
 spec:
   scaleTargetRef:

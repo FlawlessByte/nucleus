@@ -62,17 +62,17 @@ app:
 dependencies:
   - name: nucleus
     version: "^1.0.0"
-    repository: "https://your-personal-helm-repo.com"
+    repository: "https://flawlessbyte.github.io/nucleus"
     alias: frontend
     condition: frontend.enabled
   - name: nucleus
     version: "^1.0.0"
-    repository: "https://your-personal-helm-repo.com"
+    repository: "https://flawlessbyte.github.io/nucleus"
     alias: api
     condition: api.enabled
   - name: nucleus
     version: "^1.0.0"
-    repository: "https://your-personal-helm-repo.com"
+    repository: "https://flawlessbyte.github.io/nucleus"
     alias: redis
     condition: redis.enabled
 ```
@@ -151,12 +151,14 @@ redis:
 ### values-dev.yaml
 ```yaml
 frontend:
-  replicaCount: 1
+  workload:
+    replicaCount: 1
   autoscaling:
     enabled: false
 
 api:
-  replicaCount: 1
+  workload:
+    replicaCount: 1
   externalSecrets:
     enabled: false
 
@@ -408,4 +410,61 @@ worker:
             address: myapp-redis:6379
             listName: jobs
             listLength: "5"
+```
+
+### Application with Secrets and CronJobs
+```yaml
+app:
+  enabled: true
+  image:
+    repository: myapp/api
+    tag: v1.0.0
+  
+  # Create application secrets
+  additionalSecrets:
+    - name: app-secrets
+      type: Opaque
+      stringData:
+        database-url: postgres://db:5432/myapp
+        api-key: my-secret-api-key
+        jwt-secret: my-jwt-secret-key
+  
+  # Create scheduled backup job
+  additionalCronJobs:
+    - name: daily-backup
+      schedule: "0 2 * * *"  # Daily at 2 AM
+      concurrencyPolicy: Forbid
+      jobTemplate:
+        template:
+          restartPolicy: OnFailure
+          containers:
+          - name: backup
+            image: backup-tool:latest
+            command: ["/bin/sh", "-c"]
+            args: ["backup.sh"]
+            env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: database-url
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backups
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: backup-pvc
+  
+  # Create additional resources
+  additionalResources:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: backup-pvc
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 20Gi
 ```
